@@ -1,41 +1,31 @@
 # AirportWCN7850
 
-Native Wi-Fi for the **Qualcomm WCN7850** (FastConnect 7800, the NCM865 module) on macOS: the macOS Wi-Fi menu and settings, driven by a port of OpenBSD's [`qwz(4)`](https://man.openbsd.org/qwz.4) driver on the [itlwm](https://github.com/OpenIntelWireless/itlwm) 802.11 stack. macOS 26 only, no OCLP.
+This is a working WiFi kext for the Qualcomm QCNCM865 module, the Fastconnect 7800.
 
-The Bluetooth half of the chip is a separate project: [BluetoothWCN7850](https://github.com/razvanccr/BluetoothWCN7850).
+The original kext from razvanccr has the kext working on 802.11ac, but I changed the kext where it now works on 802.11ax, so WiFi 6. On my 1GBPS symmetrical fiber connection, I easily get 900Mbps up and down where I got around 200 first; this is on a Fritz access point with Ethernet uplink to a Cisco switch.
 
-**Tested on:** MSI MAG X870 Tomahawk WiFi (onboard WCN7850), macOS 26.7.1 Tahoe, OpenCore. Scans, joins WPA2 networks, DHCP, 802.11ac (VHT80, 2 spatial streams), auto-connect at boot, private Wi-Fi addresses. `wdutil info` shows the real RSSI, noise, rate, MCS and NSS.
+The Bluetooth half of the chip is a separate project and unmodified by me: [BluetoothWCN7850](https://github.com/razvanccr/BluetoothWCN7850).
 
+**Tested on:** Asus Vivobook 15 laptop with Qualcomm QCNCM865 NIC; but this should work on any hackintosh running macOS Tahoe 26 and containing this NIC.
 ## Download
 
-[release/AirportWCN7850-0.0.2.zip](release/AirportWCN7850-0.0.2.zip): the kext with the firmware embedded, nothing else is needed. Changes in [release/notes-0.0.2.md](release/notes-0.0.2.md).
+Go to the releases on this Github page, download the ZIP file, extract it, then go to the Install step.
 
 ## Install
 
-1. Copy `AirportWCN7850.kext` to `EFI/OC/Kexts` and add it to `Kernel → Add` with `MinKernel` 25.0.0.
-2. Not alongside itlwm or AirportItlwm; disable an `SSDT-Disable_Network_GPP7` if your config hides the card.
+1. Copy `AirportWCN7850_11ax.kext` to `EFI/OC/Kexts` and add it to `Kernel → Add` with `MinKernel` 25.0.0.
+2. Not alongside itlwm or AirportItlwm; disable an `SSDT-Disable_Network_GPP7` if your config hides the card, doing any of this will stop it from working altogether.
 3. Reboot and join a network from the Wi-Fi menu.
 
 `-qwzoff` in boot-args disables the driver, `-novht` falls back to 802.11n. For a first boot on unknown hardware read [Testing safely](docs/bring-up.md#testing-safely).
 
-## What does not work yet
+After this it should work, keep in mind your router or Access Point need to be capable of 11ax too. after joining the network you can open the WiFi menu in macOS while holding ALT, you can look at the PHY mode, and it should say 802.11ax.
+
+## What does not work yet and is untested by me:
 
 - WPA3/SAE, 802.1X without a supplicant; WPA1 and WEP use software crypto (this is what OpenBSD's `qwz(4)` supports).
-- 802.11ax/be, 160/320 MHz and MLO are not driven: the link is 802.11ac at up to 80 MHz, as in Linux ath12k without 160 MHz.
-- AirDrop/AWDL and the rest of Continuity (AWDL is not coming on this chip: [docs/awdl-feasibility.md](docs/awdl-feasibility.md)). Sleep/wake is not verified.
-- Broadcast and multicast are only received on open networks or WPA2 with a CCMP group cipher (ARP/IPv6 can fail on TKIP-group networks).
-
-How it works, the bring-up log, the debugging tools and the stage-by-stage bisection are in [docs/bring-up.md](docs/bring-up.md).
-
-## Building
-
-Command Line Tools, git, curl and python3:
-
-```bash
-scripts/fetch-firmware.sh && PRODUCT=AirportWCN7850 ./build.sh
-```
-
-`build/AirportWCN7850.kext` is the result (`DEBUG=1` for the traced build). The firmware comes from linux-firmware (pinned release, checksums in `firmware/SHA256SUMS`), is embedded, and is not committed.
+- 802.11be/WiFi 7, 320 MHz and MLO: the link is 802.11ax and can run up to 160MHz, maybe even more, but this is what i tested.
+- AirDrop/AWDL and the rest of Continuity (AWDL is not coming on this chip: [docs/awdl-feasibility.md](docs/awdl-feasibility.md)). Sleep/wake works for me.
 
 ## Licences and credits
 
